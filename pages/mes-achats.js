@@ -1,38 +1,69 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import Header from '../components/Header';
+import PhotoThumb from '../components/PhotoThumb';
 
-// Affiche une photo dans un cadre dont le format s'adapte à son orientation réelle,
-// pour ne pas rogner une photo en paysage dans un cadre trop haut, ni l'inverse.
-export default function PhotoThumb({ src, className = '', children, style = {} }) {
-  const [orientation, setOrientation] = useState('portrait'); // valeur par défaut le temps du chargement
+export default function Home() {
+  const [categories, setCategories] = useState([]);
 
-  function handleLoad(e) {
-    const { naturalWidth, naturalHeight } = e.target;
-    setOrientation(naturalWidth >= naturalHeight ? 'landscape' : 'portrait');
-  }
+  useEffect(() => {
+    async function load() {
+      const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
+      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path');
+
+      const withCounts = (cats || []).map((c) => {
+        const inCat = (photos || []).filter((p) => p.category_id === c.id);
+        const latest = inCat[inCat.length - 1];
+        let thumbUrl = null;
+        if (latest) {
+          const { data } = supabase.storage.from('thumbnails').getPublicUrl(latest.thumbnail_path);
+          thumbUrl = data.publicUrl;
+        }
+        return { ...c, count: inCat.length, thumbUrl };
+      });
+      setCategories(withCounts);
+    }
+    load();
+  }, []);
 
   return (
-    <div
-      className={`${className} thumb-${orientation}`}
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        aspectRatio: orientation === 'landscape' ? '3 / 2' : '4 / 5',
-        ...style,
-      }}
-    >
-      <img
-        src={src}
-        onLoad={handleLoad}
-        alt=""
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-      />
-      {children}
+    <div>
+      <Header />
+      <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+        <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+          Portfolio
+        </p>
+        <h1 style={{ fontSize: 32 }}>Les catalogues</h1>
+        <p style={{ marginTop: 10, color: '#5b5f63', maxWidth: 460 }}>
+          Chaque catégorie est un catalogue à part entière. Ouvrez-en une pour parcourir les photos publiées et les acheter.
+        </p>
+
+        <div className="cat-grid">
+          {categories.map((c) => (
+            <a key={c.id} href={`/category/${c.slug}`} className="cat-tile">
+              {c.thumbUrl ? (
+                <PhotoThumb src={c.thumbUrl}>
+                  <div className="cat-tile-overlay">
+                    <div>
+                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
+                      <h3>{c.label}</h3>
+                    </div>
+                  </div>
+                </PhotoThumb>
+              ) : (
+                <div style={{ position: 'relative', aspectRatio: '4/5', background: '#2a2a2a' }}>
+                  <div className="cat-tile-overlay">
+                    <div>
+                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
+                      <h3>{c.label}</h3>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
