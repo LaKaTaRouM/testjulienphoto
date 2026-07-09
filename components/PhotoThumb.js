@@ -32,6 +32,7 @@ export default function PhotoThumb({ src, className = '', children, style = {} }
           objectFit: 'cover',
         }}
       />
+      <div className="watermark-overlay" />
       {children}
     </div>
   );
