@@ -40,12 +40,21 @@ export default function Admin() {
     setSubmitting(true);
     setStatus('');
 
+    // Détecte si la photo est en paysage ou en portrait avant l'envoi
+    const orientation = await new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => resolve(img.naturalWidth >= img.naturalHeight ? 'landscape' : 'portrait');
+      img.onerror = () => resolve('portrait');
+      img.src = URL.createObjectURL(file);
+    });
+
     const { data: { session } } = await supabase.auth.getSession();
     const formData = new FormData();
     formData.append('file', file);
     formData.append('categoryId', categoryId);
     formData.append('title', title);
     formData.append('priceDigital', priceDigital);
+    formData.append('orientation', orientation);
 
     const res = await fetch('/api/admin/add-photo', {
       method: 'POST',
