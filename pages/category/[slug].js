@@ -29,6 +29,7 @@ export default function CategoryPage() {
         .from('photos')
         .select('*')
         .eq('category_id', cat.id)
+        .eq('active', true)
         .order('created_at', { ascending: false });
       setPhotos(list || []);
     }
