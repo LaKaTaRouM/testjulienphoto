@@ -108,12 +108,14 @@ export default function CategoryPage() {
       {lightboxPhoto && (
         <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
           <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>×</button>
-          <img
-            src={thumbUrl(lightboxPhoto.thumbnail_path)}
-            alt={lightboxPhoto.title}
-            className="lightbox-image"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div style={{ position: 'relative', maxWidth: '100%', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={thumbUrl(lightboxPhoto.thumbnail_path)}
+              alt={lightboxPhoto.title}
+              className="lightbox-image"
+            />
+            <div className="watermark-overlay" />
+          </div>
         </div>
       )}
     </div>
