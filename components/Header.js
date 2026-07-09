@@ -38,6 +38,8 @@ export default function Header() {
               </div>
             )}
           </span>
+          <a href="/prestations">Prestations</a>
+          <a href="/a-propos">À propos</a>
           {user ? (
             <>
               <a href="/mes-achats">Mes achats</a>
