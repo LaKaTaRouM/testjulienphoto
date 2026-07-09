@@ -41,26 +41,27 @@ export default function Admin() {
   async function loadPhotos() {
     const { data } = await supabase
       .from('photos')
-      .select('id, title, category_id, orientation, sold, thumbnail_path, categories ( label )')
+      .select('id, title, category_id, orientation, sold, active, thumbnail_path, categories ( label )')
       .order('created_at', { ascending: false });
     setPhotos(data || []);
   }
 
-  async function handleDelete(photoId) {
-    if (!confirm('Supprimer définitivement cette photo ?')) return;
+  async function handleToggle(photoId, currentlyActive) {
+    const label = currentlyActive ? 'masquer' : 'réactiver';
+    if (!confirm(`Voulez-vous ${label} cette photo ?`)) return;
     setDeletingId(photoId);
     const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('/api/admin/delete-photo', {
+    const res = await fetch('/api/admin/toggle-photo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ photoId }),
+      body: JSON.stringify({ photoId, active: !currentlyActive }),
     });
     setDeletingId(null);
     if (res.ok) {
       loadPhotos();
     } else {
       const data = await res.json();
-      alert(data.error || 'Échec de la suppression.');
+      alert(data.error || "Échec de l'opération.");
     }
   }
 
@@ -152,14 +153,14 @@ export default function Admin() {
                   <td>{p.title}</td>
                   <td>{p.categories?.label}</td>
                   <td>{p.orientation === 'landscape' ? 'Paysage' : 'Portrait'}</td>
-                  <td>{p.sold ? 'Vendue' : 'Disponible'}</td>
+                  <td>{p.sold ? 'Vendue' : (p.active ? 'Disponible' : 'Masquée')}</td>
                   <td>
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={() => handleToggle(p.id, p.active)}
                       disabled={deletingId === p.id}
                       style={{ background: 'none', border: 'none', color: '#c1432b', fontSize: 13, cursor: 'pointer' }}
                     >
-                      {deletingId === p.id ? 'Suppression…' : 'Supprimer'}
+                      {deletingId === p.id ? '…' : (p.active ? 'Masquer' : 'Réactiver')}
                     </button>
                   </td>
                 </tr>
