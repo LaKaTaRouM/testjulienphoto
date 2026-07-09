@@ -10,7 +10,8 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path, orientation');
+      const { data: allPhotos } = await supabase.from('photos').select('id, category_id, thumbnail_path, orientation, active');
+      const photos = (allPhotos || []).filter((p) => p.active);
 
       const withCounts = (cats || []).map((c) => {
         const inCat = (photos || []).filter((p) => p.category_id === c.id);
