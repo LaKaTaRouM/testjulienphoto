@@ -18,6 +18,7 @@ export default function CategoryPage() {
   const [category, setCategory] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -72,9 +73,11 @@ export default function CategoryPage() {
         <div className="gallery">
           {photos.map((p) => (
             <div key={p.id} className="card">
-              <PhotoThumb src={thumbUrl(p.thumbnail_path)}>
-                {p.sold && <span className="sold">Vendue</span>}
-              </PhotoThumb>
+              <div onClick={() => setLightboxPhoto(p)} style={{ cursor: 'zoom-in' }}>
+                <PhotoThumb src={thumbUrl(p.thumbnail_path)}>
+                  {p.sold && <span className="sold">Vendue</span>}
+                </PhotoThumb>
+              </div>
               <div className="body">
                 <h4>{p.title}</h4>
                 <div className="price" style={{ marginBottom: 10 }}>dès {p.price_digital} €</div>
@@ -101,6 +104,18 @@ export default function CategoryPage() {
           ))}
         </div>
       </div>
+
+      {lightboxPhoto && (
+        <div className="lightbox-overlay" onClick={() => setLightboxPhoto(null)}>
+          <button className="lightbox-close" onClick={() => setLightboxPhoto(null)}>×</button>
+          <img
+            src={thumbUrl(lightboxPhoto.thumbnail_path)}
+            alt={lightboxPhoto.title}
+            className="lightbox-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
