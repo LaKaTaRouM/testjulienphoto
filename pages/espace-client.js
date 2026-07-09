@@ -49,7 +49,10 @@ export default function MesAchats() {
     <div>
       <Header />
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
-        <h1 style={{ fontSize: 28 }}>Espace client</h1>
+        <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+  Espace client
+</p>
+<h1 style={{ fontSize: 32 }}>Vos achats</h1>
 
         {orders.length === 0 && <div className="empty">Vous n'avez pas encore d'achat.</div>}
 
