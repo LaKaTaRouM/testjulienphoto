@@ -10,7 +10,7 @@ export default function MesAchats() {
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { window.location.href = '/login?next=/mes-achats'; return; }
+      if (!session) { window.location.href = '/login?next=/espace-client'; return; }
 
       const { data, error } = await supabase
         .from('orders')
@@ -49,7 +49,7 @@ export default function MesAchats() {
     <div>
       <Header />
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
-        <h1 style={{ fontSize: 28 }}>Mes achats</h1>
+        <h1 style={{ fontSize: 28 }}>Espace client</h1>
 
         {orders.length === 0 && <div className="empty">Vous n'avez pas encore d'achat.</div>}
 
