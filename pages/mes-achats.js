@@ -1,66 +1,102 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import Header from '../components/Header';
-import PhotoThumb from '../components/PhotoThumb';
+import { useRouter } from 'next/router';
+import { supabase } from '../../lib/supabaseClient';
+import Header from '../../components/Header';
+import PhotoThumb from '../../components/PhotoThumb';
 
-export default function Home() {
-  const [categories, setCategories] = useState([]);
+function getCart() {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem('cart') || '[]'); } catch { return []; }
+}
+function setCart(cart) {
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+export default function CategoryPage() {
+  const router = useRouter();
+  const { slug } = router.query;
+  const [category, setCategory] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
+    if (!slug) return;
     async function load() {
-      const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path');
-
-      const withCounts = (cats || []).map((c) => {
-        const inCat = (photos || []).filter((p) => p.category_id === c.id);
-        const latest = inCat[inCat.length - 1];
-        let thumbUrl = null;
-        if (latest) {
-          const { data } = supabase.storage.from('thumbnails').getPublicUrl(latest.thumbnail_path);
-          thumbUrl = data.publicUrl;
-        }
-        return { ...c, count: inCat.length, thumbUrl };
-      });
-      setCategories(withCounts);
+      const { data: cat } = await supabase.from('categories').select('*').eq('slug', slug).single();
+      if (!cat) return;
+      setCategory(cat);
+      const { data: list } = await supabase
+        .from('photos')
+        .select('*')
+        .eq('category_id', cat.id)
+        .order('created_at', { ascending: false });
+      setPhotos(list || []);
     }
     load();
-  }, []);
+    setCartCount(getCart().length);
+  }, [slug]);
+
+  function thumbUrl(path) {
+    const { data } = supabase.storage.from('thumbnails').getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  function addToCart(photo, format, price) {
+    const cart = getCart();
+    cart.push({ photoId: photo.id, title: photo.title, format, price, key: photo.id + '-' + format + '-' + Date.now() });
+    setCart(cart);
+    setCartCount(cart.length);
+    alert(`"${photo.title}" (${format}) ajouté au panier.`);
+  }
+
+  if (!category) return <div><Header /><div className="wrap" style={{ paddingTop: 40 }}>Chargement…</div></div>;
 
   return (
     <div>
       <Header />
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
-        <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
-          Portfolio
-        </p>
-        <h1 style={{ fontSize: 32 }}>Les catalogues</h1>
-        <p style={{ marginTop: 10, color: '#5b5f63', maxWidth: 460 }}>
-          Chaque catégorie est un catalogue à part entière. Ouvrez-en une pour parcourir les photos publiées et les acheter.
+        <a href="/" style={{ fontSize: 13, color: '#5b5f63' }}>← Catégories</a>
+        <h1 style={{ fontSize: 30, marginTop: 12 }}>{category.label}</h1>
+        <p style={{ marginTop: 6, color: '#5b5f63' }}>
+          Panier : {cartCount} article{cartCount > 1 ? 's' : ''} — <a href="/panier" style={{ color: '#c1432b' }}>voir le panier</a>
         </p>
 
-        <div className="cat-grid">
-          {categories.map((c) => (
-            <a key={c.id} href={`/category/${c.slug}`} className="cat-tile">
-              {c.thumbUrl ? (
-                <PhotoThumb src={c.thumbUrl}>
-                  <div className="cat-tile-overlay">
-                    <div>
-                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
-                      <h3>{c.label}</h3>
-                    </div>
+        {photos.length === 0 && (
+          <div className="empty">
+            <b style={{ display: 'block', fontSize: 18, marginBottom: 6 }}>Ce catalogue est encore vide</b>
+            Connectez-vous en tant qu'administrateur pour y publier des photos.
+          </div>
+        )}
+
+        <div className="gallery">
+          {photos.map((p) => (
+            <div key={p.id} className="card">
+              <PhotoThumb src={thumbUrl(p.thumbnail_path)}>
+                {p.sold && <span className="sold">Vendue</span>}
+              </PhotoThumb>
+              <div className="body">
+                <h4>{p.title}</h4>
+                <div className="price" style={{ marginBottom: 10 }}>dès {p.price_digital} €</div>
+                {!p.sold ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button className="btn btn-outline" onClick={() => addToCart(p, 'Fichier numérique', p.price_digital)}>
+                      Fichier numérique — {p.price_digital} €
+                    </button>
+                    <button className="btn btn-outline" onClick={() => addToCart(p, 'Tirage 20×30', p.price_20x30)}>
+                      Tirage 20×30 — {p.price_20x30} €
+                    </button>
+                    <button className="btn btn-outline" onClick={() => addToCart(p, 'Tirage 30×45', p.price_30x45)}>
+                      Tirage 30×45 — {p.price_30x45} €
+                    </button>
+                    <button className="btn btn-outline" onClick={() => addToCart(p, 'Tirage A3+', p.price_a3)}>
+                      Tirage A3+ — {p.price_a3} €
+                    </button>
                   </div>
-                </PhotoThumb>
-              ) : (
-                <div style={{ position: 'relative', aspectRatio: '4/5', background: '#2a2a2a' }}>
-                  <div className="cat-tile-overlay">
-                    <div>
-                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
-                      <h3>{c.label}</h3>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </a>
+                ) : (
+                  <div style={{ color: '#5b5f63', fontSize: 13 }}>Déjà vendue</div>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </div>
