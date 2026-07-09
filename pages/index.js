@@ -44,10 +44,10 @@ export default function Home() {
       )}
       <div className="wrap" style={{ paddingTop: 50 }}>
         <h2 style={{ fontSize: 26, textTransform: 'uppercase', letterSpacing: '.02em', maxWidth: 760 }}>
-          Photographe pour animaux de compagnie sur Paris et l'Île de France
+          La simplicité dans l’image, la constance dans l’effort.
         </h2>
         <p style={{ marginTop: 18, color: '#5b5f63', maxWidth: 720, fontSize: 15, lineHeight: 1.7 }}>
-          Bienvenue sur Temps de Paws. Je suis Antoine, photographe professionnel spécialisé dans la photographie animalière pour les chiens, les chats, les lapins et bien d'autres animaux de compagnie. Que votre compagnon soit un animal à poils, à plumes ou à écailles, je suis là pour vous offrir une expérience photo unique, bienveillante et naturelle.
+          Bienvenue [Mettre titre du site]. Je suis Julien, photographe amateur basé dans le Sud de la France. 
         </p>
       </div>
 
