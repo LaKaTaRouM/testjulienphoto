@@ -16,7 +16,12 @@ body{
   line-height:1.5;
 }
 a{color:inherit; text-decoration:none;}
-img{max-width:100%; display:block;}
+img{
+  max-width:100%; display:block;
+  -webkit-touch-callout:none; /* empêche le menu "Enregistrer l'image" sur appui long, mobile */
+  -webkit-user-select:none; user-select:none;
+  -webkit-user-drag:none;
+}
 button, input, select{ font-family:inherit; font-size:14px; }
 button{ cursor:pointer; }
 
