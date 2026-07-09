@@ -32,7 +32,7 @@ export default function Home() {
           La simplicité dans l'image, la constance dans l'effort.
         </h2>
         <p style={{ marginTop: 18, color: '#5b5f63', maxWidth: 620, marginLeft: 'auto', marginRight: 'auto', fontSize: 15, lineHeight: 1.7 }}>
-          Bienvenue sur Chambre Noire. Je suis Julien, photographe amateur basé dans le Sud Est de la France.
+          Bienvenue sur Chambre Noire. Je m'appelle Julien, photographe amateur basé dans le Sud-Est de la France. Passionné par l'image sous toutes ses formes, j'aime explorer différents univers photographiques, de la nature à l'automobile. Ma spécialité reste toutefois la photographie animalière, où je m'efforce de capturer l'authenticité, le comportement et la beauté du monde sauvage.
         </p>
         <a href="/portfolio" className="btn btn-solid" style={{ marginTop: 24, display: 'inline-flex' }}>
           Voir le portfolio
