@@ -7,6 +7,8 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [deletingId, setDeletingId] = useState(null);
 
   const [categoryId, setCategoryId] = useState('');
   const [title, setTitle] = useState('');
@@ -28,11 +30,39 @@ export default function Admin() {
       setCategories(cats || []);
       if (cats && cats[0]) setCategoryId(cats[0].id);
 
+      await loadPhotos();
+
       const res = await fetch('/api/admin/orders', { headers: { Authorization: `Bearer ${session.access_token}` } });
       if (res.ok) setOrders(await res.json());
     }
     load();
   }, []);
+
+  async function loadPhotos() {
+    const { data } = await supabase
+      .from('photos')
+      .select('id, title, category_id, orientation, sold, thumbnail_path, categories ( label )')
+      .order('created_at', { ascending: false });
+    setPhotos(data || []);
+  }
+
+  async function handleDelete(photoId) {
+    if (!confirm('Supprimer définitivement cette photo ?')) return;
+    setDeletingId(photoId);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch('/api/admin/delete-photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ photoId }),
+    });
+    setDeletingId(null);
+    if (res.ok) {
+      loadPhotos();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Échec de la suppression.');
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -66,6 +96,7 @@ export default function Admin() {
     if (res.ok) {
       setStatus('Photo publiée avec succès.');
       setTitle(''); setFile(null); e.target.reset();
+      loadPhotos();
     } else {
       setStatus(data.error || 'Erreur lors de la publication.');
     }
@@ -104,6 +135,38 @@ export default function Admin() {
           {status && <p style={{ fontSize: 13, marginBottom: 12 }}>{status}</p>}
           <button className="btn btn-solid" disabled={submitting}>{submitting ? 'Publication…' : 'Publier'}</button>
         </form>
+
+        <h2 style={{ fontSize: 18, marginTop: 46, marginBottom: 6 }}>Photos publiées</h2>
+        <table className="admin">
+          <thead>
+            <tr><th>Photo</th><th>Titre</th><th>Catégorie</th><th>Orientation</th><th>Statut</th><th></th></tr>
+          </thead>
+          <tbody>
+            {photos.map((p) => {
+              const { data } = supabase.storage.from('thumbnails').getPublicUrl(p.thumbnail_path);
+              return (
+                <tr key={p.id}>
+                  <td>
+                    <img src={data.publicUrl} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />
+                  </td>
+                  <td>{p.title}</td>
+                  <td>{p.categories?.label}</td>
+                  <td>{p.orientation === 'landscape' ? 'Paysage' : 'Portrait'}</td>
+                  <td>{p.sold ? 'Vendue' : 'Disponible'}</td>
+                  <td>
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      disabled={deletingId === p.id}
+                      style={{ background: 'none', border: 'none', color: '#c1432b', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      {deletingId === p.id ? 'Suppression…' : 'Supprimer'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
         <h2 style={{ fontSize: 18, marginTop: 46, marginBottom: 6 }}>Commandes</h2>
         <table className="admin">
