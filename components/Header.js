@@ -22,7 +22,7 @@ export default function Header() {
       <div className="nav">
         <a href="/" className="logo">Chambre Noire</a>
         <nav>
-          <a href="/">Portfolio</a>
+          <a href="/portfolio">Portfolio</a>
           {user ? (
             <>
               <a href="/mes-achats">Mes achats</a>
