@@ -16,6 +16,7 @@ export default async function handler(req, res) {
   const categoryId = fields.categoryId?.[0];
   const title = fields.title?.[0];
   const priceDigital = parseInt(fields.priceDigital?.[0] || '15', 10);
+  const orientation = fields.orientation?.[0] === 'landscape' ? 'landscape' : 'portrait';
   const file = files.file?.[0];
 
   if (!categoryId || !title || !file) {
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
     price_a3: Math.round(priceDigital * 4.6),
     thumbnail_path: path,
     original_path: path,
+    orientation,
   });
   if (dbError) return res.status(500).json({ error: dbError.message });
 
