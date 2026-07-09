@@ -78,9 +78,8 @@ h1,h2,h3{ font-weight:600; letter-spacing:-0.01em; }
 .empty{ border:1.5px dashed var(--line); border-radius:4px; padding:40px 20px; text-align:center; color:#5b5f63; margin-top:24px; }
 .watermark-overlay{
   position:absolute; inset:0; z-index:5; pointer-events:none;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='140'><text x='-10' y='80' font-family='sans-serif' font-weight='600' font-size='16' fill='rgba(255,255,255,0.22)' transform='rotate(-28 120 70)'>juphotos7</text></svg>");
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='140'><text x='-10' y='80' font-family='sans-serif' font-weight='600' font-size='16' fill='rgba(255,255,255,0.32)' stroke='rgba(0,0,0,0.32)' stroke-width='0.6' paint-order='stroke' transform='rotate(-28 120 70)'>juphotos7</text></svg>");
   background-repeat:repeat;
-  mix-blend-mode:overlay;
 }
 
 .lightbox-overlay{
