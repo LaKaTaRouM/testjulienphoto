@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       quantity: 1,
     })),
     metadata: { order_id: order.id },
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/mes-achats?success=1`,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/espace-client?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/panier`,
   });
 
