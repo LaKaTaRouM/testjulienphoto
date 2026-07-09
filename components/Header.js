@@ -42,7 +42,7 @@ export default function Header() {
           <a href="/a-propos">À propos</a>
           {user ? (
             <>
-              <a href="/mes-achats">Espace client</a>
+              <a href="/espace-client">Espace client</a>
               <a href="#" onClick={handleLogout}>Déconnexion</a>
             </>
           ) : (
