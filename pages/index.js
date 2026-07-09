@@ -1,189 +1,80 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import Header from '../../components/Header';
+import { supabase } from '../lib/supabaseClient';
+import Header from '../components/Header';
+import PhotoThumb from '../components/PhotoThumb';
 
-export default function Admin() {
-  const [user, setUser] = useState(undefined); // undefined = pas encore vérifié
-  const [isAdmin, setIsAdmin] = useState(false);
+export default function Home() {
   const [categories, setCategories] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [photos, setPhotos] = useState([]);
-  const [deletingId, setDeletingId] = useState(null);
-
-  const [categoryId, setCategoryId] = useState('');
-  const [title, setTitle] = useState('');
-  const [priceDigital, setPriceDigital] = useState(15);
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [heroUrl, setHeroUrl] = useState(null);
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setUser(null); return; }
-      setUser(session.user);
-
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single();
-      setIsAdmin(!!profile?.is_admin);
-
       const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-      setCategories(cats || []);
-      if (cats && cats[0]) setCategoryId(cats[0].id);
+      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path, orientation');
 
-      await loadPhotos();
+      const withCounts = (cats || []).map((c) => {
+        const inCat = (photos || []).filter((p) => p.category_id === c.id);
+        const latest = inCat[inCat.length - 1];
+        let thumbUrl = null;
+        if (latest) {
+          const { data } = supabase.storage.from('thumbnails').getPublicUrl(latest.thumbnail_path);
+          thumbUrl = data.publicUrl;
+        }
+        return { ...c, count: inCat.length, thumbUrl };
+      });
+      setCategories(withCounts);
 
-      const res = await fetch('/api/admin/orders', { headers: { Authorization: `Bearer ${session.access_token}` } });
-      if (res.ok) setOrders(await res.json());
+      // Choisit une photo au hasard parmi celles publiées en paysage, pour la bannière d'accueil
+      const landscapePhotos = (photos || []).filter((p) => p.orientation === 'landscape');
+      if (landscapePhotos.length > 0) {
+        const pick = landscapePhotos[Math.floor(Math.random() * landscapePhotos.length)];
+        const { data } = supabase.storage.from('thumbnails').getPublicUrl(pick.thumbnail_path);
+        setHeroUrl(data.publicUrl);
+      }
     }
     load();
   }, []);
 
-  async function loadPhotos() {
-    const { data } = await supabase
-      .from('photos')
-      .select('id, title, category_id, orientation, sold, thumbnail_path, categories ( label )')
-      .order('created_at', { ascending: false });
-    setPhotos(data || []);
-  }
-
-  async function handleDelete(photoId) {
-    if (!confirm('Supprimer définitivement cette photo ?')) return;
-    setDeletingId(photoId);
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('/api/admin/delete-photo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ photoId }),
-    });
-    setDeletingId(null);
-    if (res.ok) {
-      loadPhotos();
-    } else {
-      const data = await res.json();
-      alert(data.error || 'Échec de la suppression.');
-    }
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!file) { setStatus("Choisissez une image."); return; }
-    setSubmitting(true);
-    setStatus('');
-
-    // Détecte si la photo est en paysage ou en portrait avant l'envoi
-    const orientation = await new Promise((resolve) => {
-      const img = new window.Image();
-      img.onload = () => resolve(img.naturalWidth >= img.naturalHeight ? 'landscape' : 'portrait');
-      img.onerror = () => resolve('portrait');
-      img.src = URL.createObjectURL(file);
-    });
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('categoryId', categoryId);
-    formData.append('title', title);
-    formData.append('priceDigital', priceDigital);
-    formData.append('orientation', orientation);
-
-    const res = await fetch('/api/admin/add-photo', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${session.access_token}` },
-      body: formData,
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (res.ok) {
-      setStatus('Photo publiée avec succès.');
-      setTitle(''); setFile(null); e.target.reset();
-      loadPhotos();
-    } else {
-      setStatus(data.error || 'Erreur lors de la publication.');
-    }
-  }
-
-  if (user === undefined) return <div><Header /><div className="wrap" style={{ paddingTop: 40 }}>Chargement…</div></div>;
-  if (user === null) return <div><Header /><div className="wrap" style={{ paddingTop: 40 }}>Vous devez être <a href="/login?next=/admin" style={{ color: '#c1432b' }}>connecté</a>.</div></div>;
-  if (!isAdmin) return <div><Header /><div className="wrap" style={{ paddingTop: 40 }}>Ce compte n'a pas les droits administrateur. Voir le README pour vous en donner.</div></div>;
-
   return (
     <div>
       <Header />
+      {heroUrl && (
+        <div className="home-hero" style={{ backgroundImage: `url(${heroUrl})` }} />
+      )}
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
-        <h1 style={{ fontSize: 28 }}>Espace administrateur</h1>
+        <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+          Portfolio
+        </p>
+        <h1 style={{ fontSize: 32 }}>Les catalogues</h1>
+        <p style={{ marginTop: 10, color: '#5b5f63', maxWidth: 460 }}>
+          Chaque catégorie est un catalogue à part entière. Ouvrez-en une pour parcourir les photos publiées et les acheter.
+        </p>
 
-        <h2 style={{ fontSize: 18, marginTop: 34, marginBottom: 6 }}>Publier une photo</h2>
-        <form onSubmit={handleSubmit} style={{ maxWidth: 420 }}>
-          <div className="field">
-            <label>Catégorie</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Titre</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          </div>
-          <div className="field">
-            <label>Prix fichier numérique (€)</label>
-            <input type="number" value={priceDigital} onChange={(e) => setPriceDigital(e.target.value)} min={1} required />
-          </div>
-          <div className="field">
-            <label>Image</label>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} required />
-          </div>
-          {status && <p style={{ fontSize: 13, marginBottom: 12 }}>{status}</p>}
-          <button className="btn btn-solid" disabled={submitting}>{submitting ? 'Publication…' : 'Publier'}</button>
-        </form>
-
-        <h2 style={{ fontSize: 18, marginTop: 46, marginBottom: 6 }}>Photos publiées</h2>
-        <table className="admin">
-          <thead>
-            <tr><th>Photo</th><th>Titre</th><th>Catégorie</th><th>Orientation</th><th>Statut</th><th></th></tr>
-          </thead>
-          <tbody>
-            {photos.map((p) => {
-              const { data } = supabase.storage.from('thumbnails').getPublicUrl(p.thumbnail_path);
-              return (
-                <tr key={p.id}>
-                  <td>
-                    <img src={data.publicUrl} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 3 }} />
-                  </td>
-                  <td>{p.title}</td>
-                  <td>{p.categories?.label}</td>
-                  <td>{p.orientation === 'landscape' ? 'Paysage' : 'Portrait'}</td>
-                  <td>{p.sold ? 'Vendue' : 'Disponible'}</td>
-                  <td>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      disabled={deletingId === p.id}
-                      style={{ background: 'none', border: 'none', color: '#c1432b', fontSize: 13, cursor: 'pointer' }}
-                    >
-                      {deletingId === p.id ? 'Suppression…' : 'Supprimer'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-        <h2 style={{ fontSize: 18, marginTop: 46, marginBottom: 6 }}>Commandes</h2>
-        <table className="admin">
-          <thead>
-            <tr><th>Date</th><th>Client</th><th>Statut</th><th>Total</th></tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td>{new Date(o.created_at).toLocaleDateString('fr-FR')}</td>
-                <td>{o.email}</td>
-                <td>{o.status}</td>
-                <td>{o.total} €</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="cat-grid">
+          {categories.map((c) => (
+            <a key={c.id} href={`/category/${c.slug}`} className="cat-tile">
+              {c.thumbUrl ? (
+                <PhotoThumb src={c.thumbUrl}>
+                  <div className="cat-tile-overlay">
+                    <div>
+                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
+                      <h3>{c.label}</h3>
+                    </div>
+                  </div>
+                </PhotoThumb>
+              ) : (
+                <div style={{ position: 'relative', aspectRatio: '4/5', background: '#2a2a2a' }}>
+                  <div className="cat-tile-overlay">
+                    <div>
+                      <div className="count">{c.count} photo{c.count > 1 ? 's' : ''}</div>
+                      <h3>{c.label}</h3>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   );
