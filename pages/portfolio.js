@@ -9,15 +9,18 @@ export default function Portfolio() {
   useEffect(() => {
     async function load() {
       const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-      const { data: allPhotos } = await supabase.from('photos').select('id, category_id, thumbnail_path, active');
+      const { data: allPhotos } = await supabase
+        .from('photos')
+        .select('id, category_id, thumbnail_path, active')
+        .order('created_at', { ascending: true });
       const photos = (allPhotos || []).filter((p) => p.active);
 
       const withCounts = (cats || []).map((c) => {
         const inCat = photos.filter((p) => p.category_id === c.id);
-        const latest = inCat[inCat.length - 1];
+        const first = inCat[0];
         let thumbUrl = null;
-        if (latest) {
-          const { data } = supabase.storage.from('thumbnails').getPublicUrl(latest.thumbnail_path);
+        if (first) {
+          const { data } = supabase.storage.from('thumbnails').getPublicUrl(first.thumbnail_path);
           thumbUrl = data.publicUrl;
         }
         return { ...c, count: inCat.length, thumbUrl };
