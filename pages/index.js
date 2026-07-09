@@ -5,11 +5,12 @@ import PhotoThumb from '../components/PhotoThumb';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
+  const [heroUrl, setHeroUrl] = useState(null);
 
   useEffect(() => {
     async function load() {
       const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
-      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path');
+      const { data: photos } = await supabase.from('photos').select('id, category_id, thumbnail_path, orientation');
 
       const withCounts = (cats || []).map((c) => {
         const inCat = (photos || []).filter((p) => p.category_id === c.id);
@@ -22,6 +23,14 @@ export default function Home() {
         return { ...c, count: inCat.length, thumbUrl };
       });
       setCategories(withCounts);
+
+      // Choisit une photo au hasard parmi celles publiées en paysage, pour la bannière d'accueil
+      const landscapePhotos = (photos || []).filter((p) => p.orientation === 'landscape');
+      if (landscapePhotos.length > 0) {
+        const pick = landscapePhotos[Math.floor(Math.random() * landscapePhotos.length)];
+        const { data } = supabase.storage.from('thumbnails').getPublicUrl(pick.thumbnail_path);
+        setHeroUrl(data.publicUrl);
+      }
     }
     load();
   }, []);
@@ -29,6 +38,9 @@ export default function Home() {
   return (
     <div>
       <Header />
+      {heroUrl && (
+        <div className="home-hero" style={{ backgroundImage: `url(${heroUrl})` }} />
+      )}
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
         <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
           Portfolio
