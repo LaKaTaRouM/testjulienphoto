@@ -42,13 +42,18 @@ export default function Home() {
       {heroUrl && (
         <div className="home-hero" style={{ backgroundImage: `url(${heroUrl})` }} />
       )}
-      <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <div className="wrap" style={{ paddingTop: 50 }}>
+        <h2 style={{ fontSize: 26, textTransform: 'uppercase', letterSpacing: '.02em', maxWidth: 760 }}>
+          Photographe pour animaux de compagnie sur Paris et l'Île de France
+        </h2>
+        <p style={{ marginTop: 18, color: '#5b5f63', maxWidth: 720, fontSize: 15, lineHeight: 1.7 }}>
+          Bienvenue sur Temps de Paws. Je suis Antoine, photographe professionnel spécialisé dans la photographie animalière pour les chiens, les chats, les lapins et bien d'autres animaux de compagnie. Que votre compagnon soit un animal à poils, à plumes ou à écailles, je suis là pour vous offrir une expérience photo unique, bienveillante et naturelle.
+        </p>
+      </div>
+
+      <div className="wrap" style={{ paddingTop: 50, paddingBottom: 60 }}>
         <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
           Portfolio
-        </p>
-        <h1 style={{ fontSize: 32 }}>Les catalogues</h1>
-        <p style={{ marginTop: 10, color: '#5b5f63', maxWidth: 460 }}>
-          Chaque catégorie est un catalogue à part entière. Ouvrez-en une pour parcourir les photos publiées et les acheter.
         </p>
 
         <div className="cat-grid">
