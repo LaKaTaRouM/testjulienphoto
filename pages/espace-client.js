@@ -28,19 +28,36 @@ export default function MesAchats() {
     return data.publicUrl;
   }
 
-  async function handleDownload(itemId) {
+  async function handleDownload(itemId, title) {
     setDownloading(itemId);
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch(`/api/download?item_id=${itemId}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     const data = await res.json();
-    setDownloading(null);
+
     if (data.url) {
-      window.open(data.url, '_blank');
+      try {
+        const fileRes = await fetch(data.url);
+        const blob = await fileRes.blob();
+        const ext = data.url.split('?')[0].split('.').pop() || 'jpg';
+        const filename = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.${ext}`;
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        // Si le téléchargement direct échoue pour une raison ou une autre, on retombe sur l'ouverture classique
+        window.open(data.url, '_blank');
+      }
     } else {
       alert(data.error || 'Téléchargement indisponible.');
     }
+    setDownloading(null);
   }
 
   if (orders === null) return <div><Header /><div className="wrap" style={{ paddingTop: 40 }}>Chargement…</div></div>;
@@ -50,9 +67,9 @@ export default function MesAchats() {
       <Header />
       <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
         <p style={{ color: '#c1432b', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
-  Espace client
-</p>
-<h1 style={{ fontSize: 32 }}>Vos achats</h1>
+          Espace client
+        </p>
+        <h1 style={{ fontSize: 32 }}>Vos achats</h1>
 
         {orders.length === 0 && <div className="empty">Vous n'avez pas encore d'achat.</div>}
 
@@ -68,7 +85,7 @@ export default function MesAchats() {
                   <div className="body">
                     <h4>{item.photos.title}</h4>
                     <div style={{ fontSize: 12, color: '#5b5f63', marginBottom: 10 }}>{item.format}</div>
-                    <button className="btn btn-outline" onClick={() => handleDownload(item.id)} disabled={downloading === item.id}>
+                    <button className="btn btn-outline" onClick={() => handleDownload(item.id, item.photos.title)} disabled={downloading === item.id}>
                       {downloading === item.id ? 'Préparation…' : 'Télécharger'}
                     </button>
                   </div>
